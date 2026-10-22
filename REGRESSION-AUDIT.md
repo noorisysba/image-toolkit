@@ -85,7 +85,9 @@ The local Playwright Firefox 157 package failed to launch on this Windows host w
 
 The official Mozilla Firefox 158.0.1 release was obtained in an isolated, ignored test directory and its `--version` command succeeded. A successful version command is **not** a functional or manual-browser test.
 
-The deployment workflow now uses Microsoft's version-matched Playwright Linux container and runs the full production-build Chromium, Firefox and WebKit suites before publishing. The Linux Firefox outcome is recorded in the [associated GitHub Actions run](https://github.com/noorisysba/image-toolkit/actions/workflows/deploy.yml), separately from the 93 local passes above. Keeping this outcome in Actions avoids treating a Windows runtime problem as a skipped product test.
+The deployment workflow now uses Microsoft's version-matched Playwright Linux container as user 1001 and runs the full production-build Chromium, Firefox and WebKit suites before publishing. The non-root user matches the runner's home-directory ownership, which Firefox requires. The Linux Firefox outcome is recorded in the [associated GitHub Actions run](https://github.com/noorisysba/image-toolkit/actions/workflows/deploy.yml), separately from the 93 local passes above. Each CI run also retains its JSON audit results and failure traces for seven days. Keeping this outcome in Actions avoids treating a Windows runtime problem as a skipped product test.
+
+The cancellation test deliberately delays the callback to the real native canvas encoder by one second after uploads finish. It still encodes actual images, while ensuring there is pending work when the cancel button is pressed; otherwise tiny fixtures can finish before a fast CI browser completes the click.
 
 ## Manual and physical-device testing limitations
 

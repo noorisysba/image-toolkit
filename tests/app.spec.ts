@@ -338,6 +338,14 @@ test("cancellation stops pending files and another batch can run", async ({
     })),
   );
   await expect(page.getByText("25 images added")).toBeVisible();
+  // Keep real native encoding pending long enough to exercise cancellation,
+  // including on fast CI machines where tiny fixtures otherwise finish first.
+  await page.evaluate(() => {
+    const nativeToBlob = HTMLCanvasElement.prototype.toBlob;
+    HTMLCanvasElement.prototype.toBlob = function (callback, type, quality) {
+      setTimeout(() => nativeToBlob.call(this, callback, type, quality), 1000);
+    };
+  });
   await page
     .getByRole("button", { name: "Convert Images", exact: true })
     .click();
