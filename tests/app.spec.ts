@@ -127,7 +127,9 @@ test("transparent JPG conversion uses white by default and the selected custom c
   await upload(page, "transparentPng", "transparent.png");
   await page.getByRole("button", { name: "JPG", exact: true }).click();
   for (const colour of ["#ffffff", "#ff0000"]) {
-    await page.getByLabel("Transparency background").fill(colour);
+    await page
+      .getByLabel("Transparency background", { exact: true })
+      .fill(colour);
     await page
       .getByRole("button", { name: "Convert Image", exact: true })
       .click();
@@ -394,4 +396,97 @@ test("mobile layout has usable controls and no horizontal overflow", async ({
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+});
+
+test("C2PA PNG regression: detected credentials are removed from a valid full-size download", async ({
+  page,
+}) => {
+  const bytes = process.env.REGRESSION_IMAGE
+    ? new Uint8Array(await readFile(process.env.REGRESSION_IMAGE))
+    : f.contentPng;
+  await page
+    .getByRole("link", { name: "Metadata Remover", exact: true })
+    .click();
+  await page.getByLabel("Upload images to remove metadata").setInputFiles({
+    name: "credentials.png",
+    mimeType: "image/png",
+    buffer: Buffer.from(bytes),
+  });
+  await expect(
+    page.getByText("Content credentials (C2PA): Found (1)", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Remove Metadata", exact: true })
+    .click();
+  await expect(
+    page.getByText(
+      /Metadata Removed · Verified. Removed: C2PA content credentials/,
+    ),
+  ).toBeVisible();
+  const button = page.getByRole("button", {
+    name: "Download credentials_clean.png",
+    exact: true,
+  });
+  await expect(button).toHaveCSS("background-color", "rgb(37, 99, 235)");
+  await expect(button).toHaveCSS("color", "rgb(255, 255, 255)");
+  const result = await downloaded(page, () => button.click());
+  const before = inspect(bytes),
+    after = inspect(result.bytes);
+  expect(after.counts.C2PA).toBe(0);
+  expect(after.unknown).toBe(0);
+  expect([after.width, after.height]).toEqual([before.width, before.height]);
+  const pixels = (b: Uint8Array) =>
+    inspect(b)
+      .parts.filter((p) => p.kind === "IDAT")
+      .map((p) => Array.from(b.subarray(p.start, p.end)));
+  expect(pixels(result.bytes)).toEqual(pixels(bytes));
+});
+test("unrecognised containers are named without claiming verified removal", async ({
+  page,
+}) => {
+  await page
+    .getByRole("link", { name: "Metadata Remover", exact: true })
+    .click();
+  await upload(page, "unknownPng", "unknown.png", "metadata");
+  await expect(
+    page.getByText(/Unrecognised structures: 1 \(vpAg\)/),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Remove Metadata", exact: true })
+    .click();
+  await expect(
+    page.getByText(/Not verified: no recognised metadata removed/),
+  ).toBeVisible();
+  await expect(page.getByText(/Metadata Removed · Verified/)).toHaveCount(0);
+});
+test("JPG info button toggles the exact transparency explanation; text is larger", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: "JPG", exact: true }).click();
+  const explanation =
+    "For JPG output, transparent areas will be replaced by the colour you selected, because JPG does not support transparency.";
+  await expect(page.getByText(explanation, { exact: true })).toHaveCount(0);
+  const info = page.getByRole("button", {
+    name: "About transparency background",
+    exact: true,
+  });
+  await info.click();
+  await expect(page.getByText(explanation, { exact: true })).toBeVisible();
+  await expect(info).toHaveAttribute("aria-expanded", "true");
+  await info.press("Enter");
+  await expect(page.getByText(explanation, { exact: true })).toHaveCount(0);
+  await upload(page, "png", "readable.png");
+  await expect(page.getByText("readable.png", { exact: true })).toHaveCSS(
+    "font-size",
+    "15px",
+  );
+  await page
+    .getByRole("button", { name: "Convert Image", exact: true })
+    .click();
+  const button = page.getByRole("button", {
+    name: "Download readable.jpg",
+    exact: true,
+  });
+  await expect(button).toHaveCSS("background-color", "rgb(37, 99, 235)");
+  await expect(button.getByText("Download", { exact: true })).toBeVisible();
 });

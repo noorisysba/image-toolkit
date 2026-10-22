@@ -50,6 +50,7 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
     [format, setFormat] = useState<Format>("webp"),
     [quality, setQuality] = useState(90),
     [background, setBackground] = useState("#ffffff"),
+    [backgroundHelp, setBackgroundHelp] = useState(false),
     [profiles, setProfiles] = useState(false),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(false),
@@ -184,12 +185,17 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
           const removed = categories
             .filter((k) => result.result.before.counts[k] > 0)
             .join(", ");
-          note = result.result.removed
-            ? `Metadata Removed · Verified. ${removed ? `Removed: ${removed}. ` : ""}${profiles ? "Embedded profiles removed." : "Colour profiles retained when present."}`
-            : "No Recognised Metadata Found · Verified.";
-          if (partial)
-            note +=
-              " Partially Removed: unrecognised structures were retained; their contents cannot be verified.";
+          const removedLabels = removed.replace(
+            "C2PA",
+            "C2PA content credentials",
+          );
+          if (partial) {
+            note = `${result.result.removed ? "Partially Removed" : "Not verified: no recognised metadata removed"}. ${removedLabels ? `Removed: ${removedLabels}. ` : ""}Retained unrecognised structures: ${result.result.after.unknownKinds.join(", ")}. Their contents could not be verified.`;
+          } else {
+            note = result.result.removed
+              ? `Metadata Removed · Verified. ${removedLabels ? `Removed: ${removedLabels}. ` : ""}${profiles ? "Embedded profiles removed." : "Colour profiles retained when present."}`
+              : "No Recognised Metadata Found · Verified.";
+          }
         } else {
           blob = await convert(item.file, format, quality, background);
           note = "Completed · Format and dimensions verified.";
@@ -387,14 +393,16 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
                           {size(item.file.size)} <i /> {item.width} ×{" "}
                           {item.height}
                         </span>
-                        <span className={`status ${item.status.toLowerCase()}`}>
+                        <span
+                          className={`status ${item.output?.partial ? "partial" : item.status.toLowerCase()}`}
+                        >
                           {item.status === "Processing" && (
                             <LoaderCircle size={12} className="spin" />
                           )}
                           {item.status === "Completed" && (
                             <CheckCircle2 size={12} />
                           )}{" "}
-                          {item.status}
+                          {item.output?.partial ? "Needs review" : item.status}
                           {item.info.animated ? " · Animated" : ""}
                         </span>
                       </div>
@@ -417,7 +425,12 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
                             className={item.info.counts[key] ? "found" : ""}
                             key={key}
                           >
-                            {key === "Other" ? "Other recognised" : key}:{" "}
+                            {key === "Other"
+                              ? "Other recognised"
+                              : key === "C2PA"
+                                ? "Content credentials (C2PA)"
+                                : key}
+                            :{" "}
                             {item.info.counts[key]
                               ? `Found (${item.info.counts[key]})`
                               : "Not found"}
@@ -431,8 +444,9 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
                         )}
                         {item.info.unknown > 0 && (
                           <span>
-                            Unrecognised structures: {item.info.unknown}; cannot
-                            verify their contents
+                            Unrecognised structures: {item.info.unknown} (
+                            {item.info.unknownKinds.join(", ")}); cannot verify
+                            their contents
                           </span>
                         )}
                       </div>
@@ -550,8 +564,8 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
                   <ShieldCheck size={23} />
                   <strong>Privacy essentials</strong>
                   <p>
-                    Remove recognised EXIF, GPS, XMP, IPTC, comments and
-                    descriptive text.
+                    Remove recognised EXIF, GPS, XMP, IPTC, comments,
+                    descriptive text and C2PA content credentials.
                   </p>
                 </div>
                 <div className="setting-note">
@@ -626,16 +640,38 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
                   <span>Higher quality</span>
                 </div>
                 {format === "jpg" && (
-                  <label className="background-field">
-                    Transparency background
-                    <input
-                      type="color"
-                      aria-label="Transparency background"
-                      disabled={locked}
-                      value={background}
-                      onChange={(e) => setBackground(e.target.value)}
-                    />
-                  </label>
+                  <div className="background-setting">
+                    <div className="background-field">
+                      <label htmlFor="transparency-background">
+                        Transparency background
+                      </label>
+                      <button
+                        type="button"
+                        className="info-button"
+                        aria-label="About transparency background"
+                        aria-expanded={backgroundHelp}
+                        aria-controls="background-help"
+                        onClick={() => setBackgroundHelp((value) => !value)}
+                      >
+                        <Info size={18} />
+                      </button>
+                      <input
+                        id="transparency-background"
+                        type="color"
+                        aria-label="Transparency background"
+                        disabled={locked}
+                        value={background}
+                        onChange={(e) => setBackground(e.target.value)}
+                      />
+                    </div>
+                    {backgroundHelp && (
+                      <p id="background-help" className="background-help">
+                        For JPG output, transparent areas will be replaced by
+                        the colour you selected, because JPG does not support
+                        transparency.
+                      </p>
+                    )}
+                  </div>
                 )}
                 <div className="setting-note">
                   <CheckCircle2 size={15} />

@@ -1,12 +1,20 @@
 /** Container surgery only: compressed pixels, animation and rendering chunks are retained. */
 export type Format = "png" | "jpg" | "webp";
-export type Category = "EXIF" | "GPS" | "XMP" | "IPTC" | "Comments" | "Other";
+export type Category =
+  | "EXIF"
+  | "GPS"
+  | "XMP"
+  | "IPTC"
+  | "Comments"
+  | "C2PA"
+  | "Other";
 export const categories: Category[] = [
   "EXIF",
   "GPS",
   "XMP",
   "IPTC",
   "Comments",
+  "C2PA",
   "Other",
 ];
 export const mime: Record<Format, string> = {
@@ -30,6 +38,7 @@ export type Inspection = {
   counts: Record<Category, number>;
   profiles: number;
   unknown: number;
+  unknownKinds: string[];
   orientationSafe: boolean;
   parts: Part[];
   end: number;
@@ -100,9 +109,18 @@ export function inspect(b: Uint8Array): Inspection {
     width: 0,
     height: 0,
     animated: false,
-    counts: { EXIF: 0, GPS: 0, XMP: 0, IPTC: 0, Comments: 0, Other: 0 },
+    counts: {
+      EXIF: 0,
+      GPS: 0,
+      XMP: 0,
+      IPTC: 0,
+      Comments: 0,
+      C2PA: 0,
+      Other: 0,
+    },
     profiles: 0,
     unknown: 0,
+    unknownKinds: [],
     orientationSafe: true,
     parts: [],
     end: b.length,
@@ -158,17 +176,19 @@ export function inspect(b: Uint8Array): Inspection {
       )
         info.orientationSafe = false;
       let category: Category | undefined =
-        kind === "eXIf"
-          ? "EXIF"
-          : text
-            ? /xmp/i.test(keyword)
-              ? "XMP"
-              : /comment/i.test(keyword)
-                ? "Comments"
-                : "Other"
-            : ["tIME", "dSIG"].includes(kind)
-              ? "Other"
-              : undefined;
+        kind === "caBX"
+          ? "C2PA"
+          : kind === "eXIf"
+            ? "EXIF"
+            : text
+              ? /xmp/i.test(keyword)
+                ? "XMP"
+                : /comment/i.test(keyword)
+                  ? "Comments"
+                  : "Other"
+              : ["tIME", "dSIG"].includes(kind)
+                ? "Other"
+                : undefined;
       // Legacy raw EXIF text may carry orientation; refusing it is safer than changing display.
       if (text && /raw profile type (exif|iptc)/i.test(keyword))
         info.orientationSafe = false;
@@ -199,6 +219,7 @@ export function inspect(b: Uint8Array): Inspection {
         if (kind[0] === kind[0].toUpperCase())
           fail("Unknown critical PNG chunk; safe processing is unavailable.");
         info.unknown++;
+        if (!info.unknownKinds.includes(kind)) info.unknownKinds.push(kind);
       }
       add({
         start: p,
@@ -254,12 +275,20 @@ export function inspect(b: Uint8Array): Inspection {
       if (kind === "ANIM" || kind === "ANMF") info.animated = true;
       if (kind === "ANMF") hasImage = true;
       const category =
-        kind === "EXIF" ? "EXIF" : kind === "XMP " ? "XMP" : undefined;
+        kind === "EXIF"
+          ? "EXIF"
+          : kind === "XMP "
+            ? "XMP"
+            : kind === "C2PA"
+              ? "C2PA"
+              : undefined;
       if (
         !category &&
         !["VP8X", "VP8 ", "VP8L", "ALPH", "ANIM", "ANMF", "ICCP"].includes(kind)
-      )
+      ) {
         info.unknown++;
+        if (!info.unknownKinds.includes(kind)) info.unknownKinds.push(kind);
+      }
       add({
         start: p,
         end,
@@ -306,6 +335,14 @@ export function inspect(b: Uint8Array): Inspection {
           : label.includes("adobe.com")
             ? "XMP"
             : "Other";
+      else if (
+        code === 0xeb &&
+        label.startsWith("JP") &&
+        new TextDecoder()
+          .decode(b.subarray(data, Math.min(end, data + 128)))
+          .includes("c2pa")
+      )
+        category = "C2PA";
       else if (code === 0xed) category = "IPTC";
       else if (code === 0xfe) category = "Comments";
       else if (code === 0xe2) {
@@ -314,10 +351,17 @@ export function inspect(b: Uint8Array): Inspection {
       } else if (code >= 0xe3 && code <= 0xef && code !== 0xee)
         category = "Other";
       else if (code === 0xe0) {
-        if (!label.startsWith("JFIF\0") && !label.startsWith("JFXX\0"))
+        if (!label.startsWith("JFIF\0") && !label.startsWith("JFXX\0")) {
           info.unknown++;
+          if (!info.unknownKinds.includes("APP0"))
+            info.unknownKinds.push("APP0");
+        }
         if (label.startsWith("JFXX\0")) category = "Other";
-      } else if (code === 0xee && !label.startsWith("Adobe")) info.unknown++;
+      } else if (code === 0xee && !label.startsWith("Adobe")) {
+        info.unknown++;
+        if (!info.unknownKinds.includes("APP14"))
+          info.unknownKinds.push("APP14");
+      }
       if (
         [
           0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd,

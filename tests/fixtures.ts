@@ -155,6 +155,47 @@ export async function fixtures() {
       .png()
       .toBuffer(),
   );
+  // Unsigned JUMBF fixture: container removal does not validate provenance signatures.
+  const box = (kind: string, data: Uint8Array) => {
+    const b = new Uint8Array(8 + data.length);
+    new DataView(b.buffer).setUint32(0, b.length);
+    b.set(text(kind), 4);
+    b.set(data, 8);
+    return b;
+  };
+  const manifest = box(
+    "jumb",
+    join([
+      box(
+        "jumd",
+        join([new Uint8Array(16), new Uint8Array([3]), text("c2pa\0")]),
+      ),
+      box(
+        "json",
+        text('{"fixture":"private descriptive content credentials"}'),
+      ),
+    ]),
+  );
+  const contentPng = join([
+    png.slice(0, 33),
+    pngChunk("caBX", manifest),
+    png.slice(33),
+  ]);
+  const contentJpg = join([
+    jpg.slice(0, 2),
+    jpegSegment(
+      0xeb,
+      join([text("JP"), new Uint8Array([0, 1, 0, 0, 0, 1]), manifest]),
+    ),
+    jpg.slice(2),
+  ]);
+  const contentWebp = join([webp, webpChunk("C2PA", manifest)]);
+  new DataView(contentWebp.buffer).setUint32(4, contentWebp.length - 8, true);
+  const unknownPng = join([
+    png.slice(0, 33),
+    pngChunk("vpAg", text("private unknown test payload")),
+    png.slice(33),
+  ]);
   return {
     png,
     jpg,
@@ -170,5 +211,9 @@ export async function fixtures() {
     animatedMeta,
     transparentPng,
     largePng,
+    contentPng,
+    contentJpg,
+    contentWebp,
+    unknownPng,
   };
 }

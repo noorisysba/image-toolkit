@@ -22,6 +22,25 @@ beforeAll(async () => {
   f = await fixtures();
 });
 describe("lossless format-aware metadata removal", () => {
+  for (const key of ["contentPng", "contentJpg", "contentWebp"] as const) {
+    it(`${key}: recognises and removes C2PA content credentials without altering pixels`, async () => {
+      const before = inspect(f[key]);
+      expect(before.counts.C2PA).toBe(1);
+      expect(before.unknown).toBe(0);
+      const result = cleanMetadata(f[key]);
+      expect(result.removed).toBe(1);
+      expect(result.partial).toBe(false);
+      expect(result.after.counts.C2PA).toBe(0);
+      expect(result.after.unknown).toBe(0);
+      const originalPixels = await sharp(f[key]).ensureAlpha().raw().toBuffer();
+      expect(await sharp(result.bytes).ensureAlpha().raw().toBuffer()).toEqual(
+        originalPixels,
+      );
+      expect(result.bytes).toEqual(
+        f[key === "contentPng" ? "png" : key === "contentJpg" ? "jpg" : "webp"],
+      );
+    });
+  }
   for (const key of ["metaPng", "metaJpg", "metaWebp"] as const) {
     it(`${key}: detects privacy segments, removes them, decodes and preserves exact pixels`, async () => {
       const before = inspect(f[key]);
