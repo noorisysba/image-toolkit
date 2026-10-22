@@ -24,7 +24,41 @@ export async function decode(blob: Blob): Promise<ImageBitmap> {
     );
   }
 }
-export async function validate(file: File) {
+async function bitmapThumbnail(
+  bitmap: ImageBitmap,
+  type: string,
+): Promise<Blob> {
+  const scale = Math.min(1, 96 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  try {
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Could not create an image preview.");
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    return await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob(
+        (blob) =>
+          blob
+            ? resolve(blob)
+            : reject(new Error("Could not create an image preview.")),
+        type,
+        0.9,
+      ),
+    );
+  } finally {
+    canvas.width = canvas.height = 0;
+  }
+}
+export async function thumbnail(blob: Blob): Promise<Blob> {
+  const bitmap = await decode(blob);
+  try {
+    return await bitmapThumbnail(bitmap, blob.type);
+  } finally {
+    bitmap.close();
+  }
+}
+export async function validate(file: File, withPreview = false) {
   if (!file.size) throw new Error("This file is empty.");
   if (file.size > LIMITS.bytes)
     throw new Error("File exceeds the 40 MB limit.");
@@ -34,7 +68,10 @@ export async function validate(file: File) {
   const bitmap = await decode(new Blob([bytes], { type: mime[info.format] }));
   try {
     checkLimits(bitmap.width, bitmap.height);
-    return { info, width: bitmap.width, height: bitmap.height };
+    const preview = withPreview
+      ? await bitmapThumbnail(bitmap, mime[info.format])
+      : undefined;
+    return { info, width: bitmap.width, height: bitmap.height, preview };
   } finally {
     bitmap.close();
   }

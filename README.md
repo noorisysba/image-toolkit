@@ -86,7 +86,7 @@ GitHub Actions automatically tests and redeploys. Review the Actions logs if dep
 
 ## Technical design
 
-React 19, strict TypeScript, Vite, Tailwind CSS 4, Lucide React, React Router HashRouter and JSZip. Native image decoding and canvas encoding implement conversion. A dedicated Web Worker handles metadata removal. Controlled concurrency processes one image at a time and closes ImageBitmaps, resets canvases and revokes unused Blob URLs. Filenames are sanitised and ZIP names are made unique case-insensitively.
+React 19, strict TypeScript, Vite, Tailwind CSS 4, Lucide React, React Router HashRouter and JSZip. Native image decoding and canvas encoding implement conversion. A dedicated Web Worker handles metadata removal. Controlled concurrency processes one image at a time and closes ImageBitmaps, resets canvases and revokes unused Blob URLs. Previews are separate thumbnails bounded to 96 pixels; downloads retain full original dimensions. Filenames are sanitised and ZIP names are made unique case-insensitively.
 
 `src/components/Tool.tsx` provides shared UI with independent component state. `src/services/images.ts` handles decoding/conversion/limits, `metadata.ts` handles binary parsing and container editing, `clean.ts` manages workers and output verification, and `downloads.ts` handles naming and ZIPs.
 

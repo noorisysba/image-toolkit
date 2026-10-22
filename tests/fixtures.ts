@@ -143,6 +143,18 @@ export async function fixtures() {
       .png()
       .toBuffer(),
   );
+  const largePng = new Uint8Array(
+    await sharp({
+      create: {
+        width: 640,
+        height: 400,
+        channels: 4,
+        background: { r: 20, g: 70, b: 130, alpha: 0.5 },
+      },
+    })
+      .png()
+      .toBuffer(),
+  );
   return {
     png,
     jpg,
@@ -157,5 +169,6 @@ export async function fixtures() {
     animated,
     animatedMeta,
     transparentPng,
+    largePng,
   };
 }

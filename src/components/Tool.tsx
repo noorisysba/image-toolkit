@@ -16,7 +16,7 @@ import {
   OctagonAlert,
 } from "lucide-react";
 import { categories, type Format, type Inspection } from "../services/metadata";
-import { convert, LIMITS, validate } from "../services/images";
+import { convert, LIMITS, validate, thumbnail } from "../services/images";
 import { clean } from "../services/clean";
 import {
   download,
@@ -100,12 +100,12 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
       );
     for (const file of files.slice(0, Math.max(0, slots))) {
       try {
-        const result = await validate(file);
+        const { preview, ...result } = await validate(file, true);
         if (!alive.current) return;
         const item: Item = {
           id: crypto.randomUUID(),
           file,
-          url: makeURL(file),
+          url: makeURL(preview!),
           ...result,
           status: "Waiting",
         };
@@ -200,9 +200,11 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
             ? "jpeg"
             : item.info.format
           : format;
+        const preview = await thumbnail(blob);
+        if (abort.signal.aborted) throw new Error("Cancelled.");
         const output = {
           blob,
-          url: makeURL(blob),
+          url: makeURL(preview),
           name: uniqueName(outputName(item.file.name, ext, metadata), used),
           note,
           partial,

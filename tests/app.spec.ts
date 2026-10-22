@@ -197,13 +197,11 @@ test("independent queues persist across navigation; invalid inputs give readable
     .getByRole("link", { name: "Image Converter", exact: true })
     .click();
   await expect(page.getByText("keep.png", { exact: true })).toBeVisible();
-  await page
-    .getByLabel("Upload images to convert")
-    .setInputFiles({
-      name: "fake.png",
-      mimeType: "image/png",
-      buffer: Buffer.from("fake"),
-    });
+  await page.getByLabel("Upload images to convert").setInputFiles({
+    name: "fake.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("fake"),
+  });
   await expect(page.getByRole("alert")).toContainText("Unsupported image");
   await expect(page.getByText("keep.png", { exact: true })).toBeVisible();
 });
@@ -213,15 +211,13 @@ test("metadata cleaning for PNG, JPEG and WebP verifies lossless data and ZIP", 
   await page
     .getByRole("link", { name: "Metadata Remover", exact: true })
     .click();
-  await page
-    .getByLabel("Upload images to remove metadata")
-    .setInputFiles(
-      ["metaPng", "metaJpg", "metaWebp"].map((key, i) => ({
-        name: `private.${["png", "jpg", "webp"][i]}`,
-        mimeType: "application/octet-stream",
-        buffer: Buffer.from(f[key as keyof typeof f]),
-      })),
-    );
+  await page.getByLabel("Upload images to remove metadata").setInputFiles(
+    ["metaPng", "metaJpg", "metaWebp"].map((key, i) => ({
+      name: `private.${["png", "jpg", "webp"][i]}`,
+      mimeType: "application/octet-stream",
+      buffer: Buffer.from(f[key as keyof typeof f]),
+    })),
+  );
   await expect(page.getByText("GPS: Found (1)", { exact: true })).toHaveCount(
     3,
   );
@@ -323,15 +319,13 @@ test("EXIF conversion orientation is normalised and output dimensions follow dis
 test("cancellation stops pending files and another batch can run", async ({
   page,
 }) => {
-  await page
-    .getByLabel("Upload images to convert")
-    .setInputFiles(
-      Array.from({ length: 25 }, (_, i) => ({
-        name: `image${i}.png`,
-        mimeType: "image/png",
-        buffer: Buffer.from(f.png),
-      })),
-    );
+  await page.getByLabel("Upload images to convert").setInputFiles(
+    Array.from({ length: 25 }, (_, i) => ({
+      name: `image${i}.png`,
+      mimeType: "image/png",
+      buffer: Buffer.from(f.png),
+    })),
+  );
   await expect(page.getByText("25 images added")).toBeVisible();
   await page
     .getByRole("button", { name: "Convert Images", exact: true })
@@ -345,6 +339,34 @@ test("cancellation stops pending files and another batch can run", async ({
   await expect(
     page.getByRole("button", { name: "Convert Images", exact: true }),
   ).toBeEnabled();
+});
+test("preview memory is bounded without resizing downloaded images", async ({
+  page,
+}) => {
+  await upload(page, "largePng", "large.png");
+  const inputPreview = page.locator(".thumbnail:visible");
+  await expect(inputPreview).toBeVisible();
+  expect(
+    await inputPreview.evaluate((img: HTMLImageElement) => img.naturalWidth),
+  ).toBe(96);
+  await page.getByRole("button", { name: "PNG", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Convert Image", exact: true })
+    .click();
+  await expect(
+    page.getByText("Completed · Format and dimensions verified."),
+  ).toBeVisible();
+  const resultPreview = page.locator(".result-thumbnail:visible");
+  await expect(resultPreview).toBeVisible();
+  expect(
+    await resultPreview.evaluate((img: HTMLImageElement) => img.naturalWidth),
+  ).toBe(96);
+  const result = await downloaded(page, () =>
+    page
+      .getByRole("button", { name: "Download large.png", exact: true })
+      .click(),
+  );
+  expect(inspect(result.bytes)).toMatchObject({ width: 640, height: 400 });
 });
 test("mobile layout has usable controls and no horizontal overflow", async ({
   page,
