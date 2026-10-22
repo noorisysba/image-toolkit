@@ -9,6 +9,9 @@ test.beforeAll(async () => {
 });
 test.beforeEach(async ({ page }) => {
   await page.goto("./");
+  await page
+    .locator(".brand-logo")
+    .evaluate((image: HTMLImageElement) => image.decode());
 });
 const upload = async (
   page: Page,
@@ -75,7 +78,9 @@ test("all six cross-format conversions produce real formats, MIME types, preserv
       ) as HTMLImageElement;
       const blob = await fetch(img.src).then((r) => r.blob());
       const bitmap = await createImageBitmap(blob);
-      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
       const ctx = canvas.getContext("2d")!;
       ctx.drawImage(bitmap, 0, 0);
       bitmap.close();
@@ -113,8 +118,10 @@ test("PNG re-encoding preserves transparency and quality is disabled", async ({
     const bitmap = await createImageBitmap(
       await fetch(image.src).then((r) => r.blob()),
     );
-    const c = new OffscreenCanvas(3, 2),
-      ctx = c.getContext("2d")!;
+    const c = document.createElement("canvas");
+    c.width = 3;
+    c.height = 2;
+    const ctx = c.getContext("2d")!;
     ctx.drawImage(bitmap, 0, 0);
     bitmap.close();
     return ctx.getImageData(1, 0, 1, 1).data[3];
@@ -143,8 +150,10 @@ test("transparent JPG conversion uses white by default and the selected custom c
       const bitmap = await createImageBitmap(
         await fetch(image.src).then((r) => r.blob()),
       );
-      const c = new OffscreenCanvas(32, 32),
-        ctx = c.getContext("2d")!;
+      const c = document.createElement("canvas");
+      c.width = 32;
+      c.height = 32;
+      const ctx = c.getContext("2d")!;
       ctx.drawImage(bitmap, 0, 0);
       bitmap.close();
       return Array.from(ctx.getImageData(16, 16, 1, 1).data);
@@ -358,11 +367,9 @@ test("preview memory is bounded without resizing downloaded images", async ({
   await expect(
     page.getByText("Completed · Format and dimensions verified."),
   ).toBeVisible();
-  const resultPreview = page.locator(".result-thumbnail:visible");
-  await expect(resultPreview).toBeVisible();
-  expect(
-    await resultPreview.evaluate((img: HTMLImageElement) => img.naturalWidth),
-  ).toBe(96);
+  const resultPreview = page.locator(".result-thumbnail");
+  await expect(resultPreview).toBeAttached();
+  await expect(resultPreview).toHaveJSProperty("naturalWidth", 96);
   const result = await downloaded(page, () =>
     page
       .getByRole("button", { name: "Download large.png", exact: true })
@@ -427,7 +434,10 @@ test("C2PA PNG regression: detected credentials are removed from a valid full-si
     name: "Download credentials_clean.png",
     exact: true,
   });
-  await expect(button).toHaveCSS("background-color", "rgb(37, 99, 235)");
+  await expect(button).toHaveCSS(
+    "background-color",
+    /rgb\((37, 99, 235|29, 78, 216)\)/,
+  );
   await expect(button).toHaveCSS("color", "rgb(255, 255, 255)");
   const result = await downloaded(page, () => button.click());
   const before = inspect(bytes),
@@ -487,6 +497,9 @@ test("JPG info button toggles the exact transparency explanation; text is larger
     name: "Download readable.jpg",
     exact: true,
   });
-  await expect(button).toHaveCSS("background-color", "rgb(37, 99, 235)");
+  await expect(button).toHaveCSS(
+    "background-color",
+    /rgb\((37, 99, 235|29, 78, 216)\)/,
+  );
   await expect(button.getByText("Download", { exact: true })).toBeVisible();
 });

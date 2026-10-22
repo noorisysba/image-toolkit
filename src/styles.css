@@ -66,11 +66,23 @@ header {
 .brand {
   display: flex;
   align-items: center;
-  gap: 11px;
+  width: 270px;
+  height: 60px;
+  overflow: hidden;
+  justify-content: center;
+  flex-shrink: 0;
   font-size: 20px;
   letter-spacing: -0.6px;
   font-weight: 700;
   white-space: nowrap;
+}
+.brand-logo {
+  display: block;
+  width: 360px;
+  height: 120px;
+  max-width: none;
+  flex-shrink: 0;
+  object-fit: contain;
 }
 .brand-icon {
   width: 39px;
@@ -149,9 +161,57 @@ h1 {
 }
 .tool-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 350px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 22px;
   align-items: start;
+}
+.workspace {
+  max-width: 850px;
+  margin: 0 auto;
+}
+.file-list {
+  max-height: 360px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 2px;
+}
+.result-list {
+  list-style: none;
+  padding: 2px;
+  margin: 20px 0 0;
+  display: grid;
+  gap: 12px;
+  max-height: 550px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.result-original {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #64748b;
+  overflow-wrap: anywhere;
+}
+.results-empty {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #64748b;
+  margin: 0;
+}
+.results-card h2 {
+  scroll-margin-top: 20px;
+}
+.results-card .progress-box {
+  margin-top: 0;
+}
+.settings-card .settings-body {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.results-card .cancel-button {
+  padding: 9px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
 }
 .card {
   background: #fff;
@@ -213,8 +273,8 @@ h2 {
 .dropzone {
   width: 100%;
   min-height: 260px;
-  border: 1.5px dashed #cbd5e1;
-  background: #fbfdff;
+  border: 2px dashed #2563eb;
+  background: #eff6ff;
   border-radius: 9px;
   display: flex;
   align-items: center;
@@ -252,9 +312,9 @@ h2 {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: white;
-  border: 1px solid #dbe2ea;
-  color: #334155;
+  background: #2563eb;
+  border: 1px solid #2563eb;
+  color: #fff;
   border-radius: 6px;
   padding: 8px 13px;
   margin-top: 9px;
@@ -905,7 +965,7 @@ summary {
     padding: 0 24px;
   }
   .tool-grid {
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
   .card-heading {
@@ -929,6 +989,12 @@ summary {
   }
   .brand {
     font-size: 18px;
+    width: 240px;
+    height: 54px;
+  }
+  .brand-logo {
+    width: 320px;
+    height: 107px;
   }
   .brand-icon {
     width: 34px;

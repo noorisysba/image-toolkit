@@ -15,7 +15,13 @@ import {
   inspect,
   join,
 } from "./metadata";
-import { outputName, safeName, uniqueName, zipFiles } from "./downloads";
+import {
+  outputName,
+  safeName,
+  uniqueName,
+  zipFiles,
+  MAX_ZIP_BYTES,
+} from "./downloads";
 import JSZip from "jszip";
 let f: Awaited<ReturnType<typeof fixtures>>;
 beforeAll(async () => {
@@ -194,6 +200,20 @@ describe("lossless format-aware metadata removal", () => {
   });
 });
 describe("download names and ZIPs", () => {
+  it("rejects oversized ZIPs before reading image buffers", async () => {
+    let read = false;
+    const blob = {
+      size: MAX_ZIP_BYTES + 1,
+      arrayBuffer: async () => {
+        read = true;
+        return new ArrayBuffer(0);
+      },
+    } as Blob;
+    await expect(
+      zipFiles([{ name: "large.png", blob }], () => {}),
+    ).rejects.toThrow(/128 MB ZIP safety limit/);
+    expect(read).toBe(false);
+  });
   it("preserves Unicode and spaces, strips unsafe paths and disambiguates case-insensitively", () => {
     const used = new Set<string>();
     expect(uniqueName("holiday.webp", used)).toBe("holiday.webp");

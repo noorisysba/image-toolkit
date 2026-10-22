@@ -4,6 +4,8 @@ export const LIMITS = {
   bytes: 40 * 1024 * 1024,
   pixels: 32_000_000,
   dimension: 16384,
+  batchBytes: 256 * 1024 * 1024,
+  outputBytes: 256 * 1024 * 1024,
 };
 export function checkLimits(width: number, height: number) {
   if (
@@ -90,6 +92,8 @@ export async function convert(
   const bitmap = await decode(
     new Blob([await file.arrayBuffer()], { type: mime[info.format] }),
   );
+  const width = bitmap.width,
+    height = bitmap.height;
   const canvas = document.createElement("canvas");
   canvas.width = bitmap.width;
   canvas.height = bitmap.height;
@@ -101,6 +105,7 @@ export async function convert(
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
     ctx.drawImage(bitmap, 0, 0);
+    bitmap.close();
     const blob = await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob(
         (b) =>
@@ -118,9 +123,11 @@ export async function convert(
       throw new Error(
         "Your browser does not support the selected output format.",
       );
+    // Release the full-size canvas before decoding the output for verification.
+    canvas.width = canvas.height = 0;
     const result = await decode(blob);
     try {
-      if (result.width !== bitmap.width || result.height !== bitmap.height)
+      if (result.width !== width || result.height !== height)
         throw new Error("Output dimensions did not match the original.");
     } finally {
       result.close();

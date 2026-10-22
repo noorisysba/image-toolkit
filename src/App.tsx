@@ -6,7 +6,6 @@ import {
   useLocation,
 } from "react-router-dom";
 import {
-  Image,
   ArrowRightLeft,
   ShieldCheck,
   LockKeyhole,
@@ -21,11 +20,18 @@ export default function App() {
     <>
       <header>
         <div className="header-inner">
-          <NavLink to="/converter" className="brand">
-            <span className="brand-icon">
-              <Image size={23} />
-            </span>
-            Image Toolkit
+          <NavLink
+            to="/converter"
+            className="brand"
+            aria-label="Image Toolkit home"
+          >
+            <img
+              className="brand-logo"
+              src={`${import.meta.env.BASE_URL}image-toolkit-logo.png`}
+              alt="Image Toolkit"
+              width="2172"
+              height="724"
+            />
           </NavLink>
           <nav aria-label="Image tools">
             <NavLink to="/converter">

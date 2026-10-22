@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+export const MAX_ZIP_BYTES = 128 * 1024 * 1024;
 export function safeName(name: string): string {
   return (
     name
@@ -38,6 +39,10 @@ export async function zipFiles(
   files: { name: string; blob: Blob }[],
   progress: (n: number) => void,
 ): Promise<Blob> {
+  if (files.reduce((total, file) => total + file.blob.size, 0) > MAX_ZIP_BYTES)
+    throw new Error(
+      "These results exceed the 128 MB ZIP safety limit. Download images individually or use a smaller batch.",
+    );
   const zip = new JSZip(),
     used = new Set<string>();
   for (const file of files)

@@ -62,6 +62,7 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
       failed: number;
       cancelled: boolean;
     } | null>(null);
+  const resultsHeading = useRef<HTMLHeadingElement>(null);
   const input = useRef<HTMLInputElement>(null),
     urls = useRef(new Set<string>()),
     controller = useRef<AbortController | null>(null),
@@ -94,6 +95,10 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
     setLoading(true);
     setBatch(null);
     const messages: string[] = [];
+    let inputBytes = current.current.reduce(
+      (total, item) => total + item.file.size,
+      0,
+    );
     const slots = LIMITS.files - current.current.length;
     if (files.length > slots)
       messages.push(
@@ -101,6 +106,10 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
       );
     for (const file of files.slice(0, Math.max(0, slots))) {
       try {
+        if (inputBytes + file.size > LIMITS.batchBytes)
+          throw new Error(
+            "The batch exceeds the 256 MB input safety limit. Use a smaller batch.",
+          );
         const { preview, ...result } = await validate(file, true);
         if (!alive.current) return;
         const item: Item = {
@@ -111,6 +120,7 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
           status: "Waiting",
         };
         setItems((old) => [...old, item]);
+        inputBytes += file.size;
       } catch (e) {
         messages.push(
           `${file.name}: ${e instanceof Error ? e.message : "Could not read this image."}`,
@@ -145,35 +155,38 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
     setErrors([]);
     const abort = new AbortController();
     controller.current = abort;
-    const queue = [...items],
+    const queue = items.map(({ output, error, ...item }) => item),
       used = new Set<string>();
+    let outputBytes = 0;
     let done = 0,
       failed = 0;
     setBatch({ done, total: queue.length, failed, cancelled: false });
-    for (const item of queue) if (item.output) release(item.output.url);
-    setItems((old) =>
-      old.map((item) => ({
-        ...item,
-        status: "Waiting",
-        output: undefined,
-        error: undefined,
-      })),
-    );
+    for (const item of items) if (item.output) release(item.output.url);
+    let batchItems: Item[] = queue.map((item) => ({
+      ...item,
+      status: "Waiting",
+      output: undefined,
+      error: undefined,
+    }));
+    const updateItem = (id: string, patch: Partial<Item>) => {
+      batchItems = batchItems.map((item) =>
+        item.id === id ? { ...item, ...patch } : item,
+      );
+      setItems(batchItems);
+    };
+    setItems(batchItems);
+    requestAnimationFrame(() => {
+      resultsHeading.current?.scrollIntoView({ block: "start" });
+      resultsHeading.current?.focus({ preventScroll: true });
+    });
     // One decoded image at a time bounds memory. Cancellation stops the worker and pending files.
     for (const item of queue) {
       if (abort.signal.aborted) break;
-      setItems((old) =>
-        old.map((x) =>
-          x.id === item.id
-            ? {
-                ...x,
-                status: "Processing",
-                output: undefined,
-                error: undefined,
-              }
-            : x,
-        ),
-      );
+      updateItem(item.id, {
+        status: "Processing",
+        output: undefined,
+        error: undefined,
+      });
       try {
         let blob: Blob,
           note = "",
@@ -201,6 +214,10 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
           note = "Completed · Format and dimensions verified.";
         }
         if (abort.signal.aborted) throw new Error("Cancelled.");
+        if (outputBytes + blob.size > LIMITS.outputBytes)
+          throw new Error(
+            "Results exceed the 256 MB memory safety limit. Download completed images, clear the batch, and process the remaining files separately.",
+          );
         const ext = metadata
           ? item.info.format === "jpg" && /\.jpeg$/i.test(item.file.name)
             ? "jpeg"
@@ -215,27 +232,17 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
           note,
           partial,
         };
-        setItems((old) =>
-          old.map((x) =>
-            x.id === item.id ? { ...x, status: "Completed", output } : x,
-          ),
-        );
+        outputBytes += blob.size;
+        updateItem(item.id, { status: "Completed", output });
       } catch (e) {
         if (!abort.signal.aborted) failed++;
-        setItems((old) =>
-          old.map((x) =>
-            x.id === item.id
-              ? {
-                  ...x,
-                  status: abort.signal.aborted ? "Cancelled" : "Failed",
-                  error:
-                    e instanceof Error
-                      ? e.message
-                      : "Processing failed. Try a smaller image.",
-                }
-              : x,
-          ),
-        );
+        updateItem(item.id, {
+          status: abort.signal.aborted ? "Cancelled" : "Failed",
+          error:
+            e instanceof Error
+              ? e.message
+              : "Processing failed. Try a smaller image.",
+        });
       }
       if (abort.signal.aborted) break;
       done++;
@@ -243,14 +250,33 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
     if (abort.signal.aborted) {
-      setItems((old) =>
-        old.map((x) =>
-          x.status === "Waiting" || x.status === "Processing"
-            ? { ...x, status: "Cancelled" }
-            : x,
-        ),
+      batchItems = batchItems.map((item) =>
+        item.status === "Waiting" || item.status === "Processing"
+          ? { ...item, status: "Cancelled" }
+          : item,
       );
+      setItems(batchItems);
       setBatch({ done, total: queue.length, failed, cancelled: true });
+    } else {
+      // Commit a complete snapshot and derive the summary from actual results.
+      // Deferred render updates must never leave stale "Processing" rows behind.
+      batchItems = batchItems.map((item) =>
+        item.output || item.status === "Failed"
+          ? item
+          : {
+              ...item,
+              status: "Failed",
+              error:
+                "No verified output was produced. Please retry this image.",
+            },
+      );
+      setItems(batchItems);
+      setBatch({
+        done: queue.length,
+        total: queue.length,
+        failed: batchItems.filter((item) => !item.output).length,
+        cancelled: false,
+      });
     }
     controller.current = null;
     running.current = false;
@@ -269,9 +295,11 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
         blob,
         metadata ? "image-toolkit-cleaned.zip" : "image-toolkit-converted.zip",
       );
-    } catch {
+    } catch (error) {
       setErrors([
-        "Could not prepare the ZIP. Download files individually or try a smaller batch.",
+        error instanceof Error
+          ? error.message
+          : "Could not prepare the ZIP. Download files individually or try a smaller batch.",
       ]);
     } finally {
       setZipProgress(null);
@@ -283,7 +311,7 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
         <div className="card-heading">
           <div className="section-title">
             <span className="step">1</span>
-            <h2>Your images</h2>
+            <h2>Upload your images</h2>
             <span className="count">{items.length}</span>
           </div>
           <span className="local-label">
@@ -347,7 +375,7 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
           </button>
           <div className="limits">
             <span>Up to 50 images · 40 MB per file</span>
-            <span>32 megapixels per image</span>
+            <span>32 megapixels per image · 256 MB per batch</span>
           </div>
           {errors.length > 0 && (
             <div role="alert" className="error-box">
@@ -383,7 +411,11 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
               </div>
               <ul className="file-list">
                 {items.map((item) => (
-                  <li key={item.id} className="file-item">
+                  <li
+                    key={item.id}
+                    data-file-id={item.id}
+                    className="file-item"
+                  >
                     <div className="file-top">
                       <img className="thumbnail" src={item.url} alt="" />
                       <div className="file-details">
@@ -456,53 +488,6 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
                         {item.error}
                       </p>
                     )}
-                    {item.output && (
-                      <div className="output">
-                        <div className="output-top">
-                          <img
-                            className="result-thumbnail"
-                            src={item.output.url}
-                            alt="Output preview"
-                          />
-                          <div>
-                            <strong>{item.output.name}</strong>
-                            <span>
-                              {size(item.file.size)} <ArrowRight size={12} />{" "}
-                              {size(item.output.blob.size)}{" "}
-                              <em
-                                className={
-                                  item.output.blob.size <= item.file.size
-                                    ? "reduction"
-                                    : ""
-                                }
-                              >
-                                {Math.abs(
-                                  (1 - item.output.blob.size / item.file.size) *
-                                    100,
-                                ).toFixed(1)}
-                                %{" "}
-                                {item.output.blob.size <= item.file.size
-                                  ? "smaller"
-                                  : "larger"}
-                              </em>
-                            </span>
-                          </div>
-                          <button
-                            className="download-button"
-                            onClick={() =>
-                              download(item.output!.blob, item.output!.name)
-                            }
-                            aria-label={`Download ${item.output.name}`}
-                          >
-                            <Download size={16} />
-                            <span>Download</span>
-                          </button>
-                        </div>
-                        <p className={item.output.partial ? "partial" : ""}>
-                          {item.output.note}
-                        </p>
-                      </div>
-                    )}
                   </li>
                 ))}
               </ul>
@@ -512,40 +497,6 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
               <FileImage size={16} />
               <span>Your images will appear here. Ready when you are.</span>
             </div>
-          )}
-          {batch && (
-            <div className="progress-box" aria-live="polite">
-              <div>
-                <strong>
-                  {busy
-                    ? "Processing your images…"
-                    : batch.cancelled
-                      ? "Processing cancelled"
-                      : batch.failed
-                        ? "Batch finished with errors"
-                        : "Batch complete"}
-                </strong>
-                <span>{Math.round((batch.done / batch.total) * 100)}%</span>
-              </div>
-              <progress max={batch.total} value={batch.done} />
-              <small>
-                {batch.total} total · {batch.done - batch.failed} processed ·{" "}
-                {batch.total - batch.done} remaining · {batch.failed} failed
-              </small>
-            </div>
-          )}
-          {completed.length > 1 && (
-            <button
-              className="zip-button"
-              disabled={locked}
-              onClick={() => void zip()}
-            >
-              <FolderDown size={18} />
-              {zipProgress !== null
-                ? `Preparing ZIP… ${zipProgress}%`
-                : "Download All as ZIP"}
-              <span>{completed.length} files</span>
-            </button>
           )}
         </div>
       </section>
@@ -700,14 +651,7 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
                     : "Convert Images"}
               {!busy && <ArrowRight size={16} />}
             </button>
-            {busy && (
-              <button
-                className="cancel-button"
-                onClick={() => controller.current?.abort()}
-              >
-                Cancel processing
-              </button>
-            )}
+
             <p className="settings-caption">
               {items.length
                 ? `${items.length} image${items.length !== 1 ? "s" : ""} ready to ${metadata ? "clean" : "convert"}`
@@ -734,6 +678,129 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
           </div>
         )}
       </aside>
+      <section
+        className="card results-card"
+        aria-labelledby={`${mode}-results-heading`}
+      >
+        <div className="card-heading">
+          <div className="section-title">
+            <span className="step">3</span>
+            <h2
+              id={`${mode}-results-heading`}
+              ref={resultsHeading}
+              tabIndex={-1}
+            >
+              Download your images
+            </h2>
+          </div>
+        </div>
+        <div className="files-body">
+          {batch && (
+            <div className="progress-box" aria-live="polite">
+              <div>
+                <strong>
+                  {busy
+                    ? "Processing your images…"
+                    : batch.cancelled
+                      ? "Processing cancelled"
+                      : batch.failed
+                        ? "Batch finished with errors"
+                        : "Batch complete"}
+                </strong>
+                <span>{Math.round((batch.done / batch.total) * 100)}%</span>
+              </div>
+              <progress max={batch.total} value={batch.done} />
+              <small>
+                {batch.total} total · {batch.done - batch.failed} processed ·{" "}
+                {batch.total - batch.done} remaining · {batch.failed} failed
+              </small>
+            </div>
+          )}
+          {completed.length > 1 && (
+            <button
+              className="zip-button"
+              disabled={locked}
+              onClick={() => void zip()}
+            >
+              <FolderDown size={18} />
+              {zipProgress !== null
+                ? `Preparing ZIP… ${zipProgress}%`
+                : "Download All as ZIP"}
+              <span>{completed.length} files</span>
+            </button>
+          )}
+          {busy && (
+            <button
+              className="cancel-button"
+              onClick={() => controller.current?.abort()}
+            >
+              Cancel processing
+            </button>
+          )}
+          {completed.length ? (
+            <ul className="result-list">
+              {completed.map((item) => (
+                <li key={item.id} className="file-item">
+                  <p className="result-original">Original: {item.file.name}</p>{" "}
+                  {item.output && (
+                    <div className="output">
+                      <div className="output-top">
+                        <img
+                          className="result-thumbnail"
+                          src={item.output.url}
+                          alt="Output preview"
+                        />
+                        <div>
+                          <strong>{item.output.name}</strong>
+                          <span>
+                            {size(item.file.size)} <ArrowRight size={12} />{" "}
+                            {size(item.output.blob.size)}{" "}
+                            <em
+                              className={
+                                item.output.blob.size <= item.file.size
+                                  ? "reduction"
+                                  : ""
+                              }
+                            >
+                              {Math.abs(
+                                (1 - item.output.blob.size / item.file.size) *
+                                  100,
+                              ).toFixed(1)}
+                              %{" "}
+                              {item.output.blob.size <= item.file.size
+                                ? "smaller"
+                                : "larger"}
+                            </em>
+                          </span>
+                        </div>
+                        <button
+                          className="download-button"
+                          onClick={() =>
+                            download(item.output!.blob, item.output!.name)
+                          }
+                          aria-label={`Download ${item.output.name}`}
+                        >
+                          <Download size={16} />
+                          <span>Download</span>
+                        </button>
+                      </div>
+                      <p className={item.output.partial ? "partial" : ""}>
+                        {item.output.note}
+                      </p>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="results-empty">
+              {busy
+                ? "Your downloads will appear as each image finishes."
+                : "Upload images in step 1, then process them in step 2. Your downloads will appear here."}
+            </p>
+          )}
+        </div>
+      </section>
     </div>
   );
 }

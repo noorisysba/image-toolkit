@@ -9,6 +9,8 @@ Two free, private image utilities that run entirely in your browser.
 
 Each tool has a separate in-memory queue that survives navigation between tools. Supports adding files, removing files, clearing, failure isolation, cancellation, file-level progress, and collision-safe filenames. Mobile and keyboard accessible. No backend, account, analytics, persistence, external fonts, image uploads or processing network requests.
 
+Both tools now follow three vertical steps: **Upload → Settings and processing → Downloads**. The upload target is highlighted and long file lists scroll inside a bounded area. The header uses the supplied Image Toolkit logo. See [REGRESSION-AUDIT.md](REGRESSION-AUDIT.md) for the browser matrix, orientation and batch checks, resource measurements, and manual/device testing limitations.
+
 ## Use the website
 
 1. Open either tool and choose images or drag files into the upload area.
@@ -41,6 +43,16 @@ pnpm test:e2e
 pnpm build
 pnpm preview
 ```
+
+For the expanded audit, install the test engines and choose the projects available on your machine:
+
+```sh
+pnpm exec playwright install chromium firefox webkit
+pnpm test:audit --project=chromium --project=firefox --project=webkit
+pnpm test:audit --project=chrome --project=mobile-chromium --project=mobile-webkit
+```
+
+`chrome` uses an installed Google Chrome. `mobile-chromium` and `mobile-webkit` are phone emulation, not physical devices. WebKit is not a real Safari installation. The Linux CI image pins Playwright 1.64.1 and runs the Chromium, Firefox and WebKit suites before deploying; update the container image tag alongside Playwright in the lockfile when upgrading.
 
 On Linux, use `pnpm exec playwright install --with-deps chromium` for browser system packages. `pnpm build` runs strict TypeScript checks before generating `dist/`. Preview serves the production files at `http://127.0.0.1:4173/image-toolkit/`.
 
@@ -93,7 +105,7 @@ React 19, strict TypeScript, Vite, Tailwind CSS 4, Lucide React, React Router Ha
 ## Privacy policy and limitations
 
 - Images stay in memory on your device. No uploads, telemetry, cookies, browser storage, remote image APIs or external font requests. GitHub serves the app's static files and may log the page request under its own policies. The app makes no image-processing HTTP requests.
-- Defaults: 50 files per tool, 40 MB per file, 32 million pixels, 16,384 pixels per side. Constants live in `src/services/images.ts`. Device memory and browser codec limits may be lower; errors remain local to a file. An exceptionally large animation can use more memory than a still image.
+- Defaults: 50 files per tool, 40 MB per file, 32 million pixels, 16,384 pixels per side, 256 MB total input per queue and 256 MB total processed results. ZIP creation is limited to 128 MB of successful outputs because archive preparation can require extra copies in memory; larger results remain individually downloadable. Constants live in `src/services/images.ts` and `src/services/downloads.ts`. Device memory and browser codec limits may be lower; errors remain local to a file. An exceptionally large animation can use more memory than a still image.
 - Converter rejects animated WebP and APNG because canvas encoding cannot preserve all frames. Metadata cleaning retains animation chunks byte for byte. Conversion may change colours or remove metadata as a consequence of re-encoding; it does not perform the cleaner's verified removal workflow.
 - Cleaning refuses non-identity EXIF orientation, malformed EXIF, legacy PNG raw EXIF/IPTC text and recognised non-identity XMP orientation instead of silently changing appearance. Use an editor to normalise orientation first, or convert and then submit the converted file to the cleaner as a separate action.
 - Removes recognised descriptive containers: JPEG EXIF/XMP APP1, IPTC APP13, COM, JFXX thumbnails, other descriptive APP segments; PNG `eXIf`, text chunks, `tIME` and `dSIG`; WebP EXIF and XMP. JFIF thumbnails are removed without deleting JFIF rendering data. JPEG compressed scans (including progressive scans) are copied intact. PNG CRCs are validated. WebP RIFF sizes and VP8X feature flags are repaired.
@@ -101,6 +113,6 @@ React 19, strict TypeScript, Vite, Tailwind CSS 4, Lucide React, React Router Ha
 - C2PA content credentials are recognised in PNG `caBX`, WebP `C2PA`, and identifiable JPEG APP11/JUMBF manifest segments and removed by default. The entire metadata container is removed; no provenance signature validation is claimed. Ordinary JUMBF/APP11 segments are removed as other descriptive metadata. See the [C2PA embedding specification](https://spec.c2pa.org/specifications/specifications/2.4/specs/C2PA_Specification.html#_embedding_manifests).
 - Unknown ancillary PNG/WebP structures or unrecognised retained JPEG rendering segments are named in the interface and flagged **Needs review**. Results say **Partially Removed** only if some recognised metadata was removed, or **Not verified: no recognised metadata removed** when nothing was removed. They never claim verified removal with unknown structures retained. The app verifies recognised categories only; it cannot promise detection of every proprietary metadata scheme. GPS is reported only as Found/Not found when the EXIF GPS pointer is detected; coordinates are never displayed.
 - This is not a forensic sanitiser or malware scanner. It cannot remove information visible in pixels, steganography, or copies held elsewhere. Unsupported or damaged files produce an error rather than an invalid download.
-- Tested in Chromium. Current desktop browsers are recommended; specific older/mobile codec capabilities vary. No unexecuted Safari/Firefox test coverage is claimed.
+- Cross-browser audit details and exact coverage limitations are in [REGRESSION-AUDIT.md](REGRESSION-AUDIT.md). Automated WebKit and phone emulation must not be mistaken for manual Safari or physical mobile validation.
 
 Container references: [PNG specification](https://www.w3.org/TR/png/), [WebP RIFF container specification](https://developers.google.com/speed/webp/docs/riff_container). Deployment follows [GitHub's custom Pages workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
