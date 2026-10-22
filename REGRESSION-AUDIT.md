@@ -2,6 +2,14 @@
 
 Date: 22 October 2026. Local host: Windows x64.
 
+## Reference design update
+
+Both pages now follow the supplied reference images: blue accented hero headings, floating image artwork, feature cards, round numbered steps, aligned conversion controls, an inset download placeholder, and bordered benefit cards. The supplied logo remains byte-for-byte unchanged (SHA-256 `71D08BA18E1A25EEF75E767E1CB019F7911D0DA658EFC777E3CF822A50FA6D1A`). Image processing logic was not changed.
+
+Redesign validation: 28 unit tests passed; the production browser matrix passed 74 checks with two intentional resource-instrumentation skips across installed Chrome, desktop WebKit, Chromium mobile emulation and WebKit mobile emulation. Coverage includes all eight EXIF orientations, metadata verification, 50-file batches and ZIP contents, cancellation, transparency, and repeated resource cleanup. These remain automated engine/emulation checks, not manual Safari or physical-device certification. Screenshots of both desktop pages and the mobile layout were visually reviewed. Responsive checks now cover both routes at widths 320, 390, 720, 740, 768, 1024 and 1440 pixels.
+
+The sections below retain the earlier functional audit and its browser limitations.
+
 The final local audit used a **static production build**, not the development server. Results are automated browser checks and visual inspection of captured layouts. They are not represented as manual native-browser or physical-device sign-off.
 
 ## Implemented changes

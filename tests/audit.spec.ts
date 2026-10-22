@@ -36,11 +36,19 @@ test("steps are vertical, upload is highlighted, and supplied logo loads", async
   ).toBe(2172);
   for (const width of [320, 390, 720, 740, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth,
-      ),
-    ).toBe(true);
+    for (const route of ["converter", "metadata-remover"]) {
+      await page.goto(`./#/${route}`);
+      await expect(page.locator(".hero-features > div")).toHaveCount(3);
+      await expect(page.locator("h1 > span")).toHaveCSS(
+        "color",
+        "rgb(23, 102, 255)",
+      );
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true);
+    }
   }
 });
 test("all eight EXIF orientations convert to the correct pixel arrangement and unsafe cleaning is refused", async ({

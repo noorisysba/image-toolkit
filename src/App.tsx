@@ -10,9 +10,23 @@ import {
   ShieldCheck,
   LockKeyhole,
   ArrowUpRight,
-  Check,
+  Layers,
+  Zap,
+  UsersRound,
 } from "lucide-react";
 import { Tool } from "./components/Tool";
+function PictureArt() {
+  return (
+    <svg viewBox="0 0 100 100" fill="none">
+      <circle cx="36" cy="29" r="10" fill="currentColor" opacity=".7" />
+      <path
+        d="M10 80 34 44a6 6 0 0 1 10 0l14 21 9-13a6 6 0 0 1 10 1l17 27a5 5 0 0 1-4 8H14a5 5 0 0 1-4-8Z"
+        fill="currentColor"
+        opacity=".8"
+      />
+    </svg>
+  );
+}
 export default function App() {
   const location = useLocation(),
     metadata = location.pathname === "/metadata-remover";
@@ -52,18 +66,62 @@ export default function App() {
       <main>
         <div className="intro">
           <div className="eyebrow">
-            <span /> SMALL TOOLS. COMPLETE PRIVACY.
+            <span /> SIMPLE TOOLS. COMPLETE PRIVACY.
           </div>
           <h1>
-            {metadata
-              ? "Share the image. Keep your privacy."
-              : "Your images, in the right format."}
+            {metadata ? "Share the image. " : "Your images, "}
+            <span>
+              {metadata ? "Keep your privacy." : "in the right format."}
+            </span>
           </h1>
           <p>
             {metadata
               ? "Remove hidden details from your photos without changing their format."
               : "Convert images in a few clicks. No uploads, no accounts, no fuss."}
           </p>
+          <div className="hero-features">
+            <div>
+              <LockKeyhole />
+              <span>
+                <strong>Private</strong>
+                <small>Stays in your browser</small>
+              </span>
+            </div>
+            <div>
+              {metadata ? <ShieldCheck /> : <Zap />}
+              <span>
+                <strong>{metadata ? "Verified" : "Fast"}</strong>
+                <small>
+                  {metadata ? "Removes metadata safely" : "Convert in seconds"}
+                </small>
+              </span>
+            </div>
+            <div>
+              <Layers />
+              <span>
+                <strong>
+                  {metadata ? "Format-preserving" : "Batch-ready"}
+                </strong>
+                <small>
+                  {metadata ? "Keeps original quality" : "Up to 50 images"}
+                </small>
+              </span>
+            </div>
+          </div>
+          <div className="hero-art" aria-hidden="true">
+            <div className="art-tile art-back">
+              <PictureArt />
+            </div>
+            <div className="art-tile art-small">
+              <PictureArt />
+            </div>
+            <div className="art-tile art-front">
+              <PictureArt />
+            </div>
+            <div className="art-badge">
+              {metadata ? <ShieldCheck /> : <ArrowUpRight />}
+            </div>
+          </div>
         </div>
         <div className="workspace">
           <Routes>
@@ -88,14 +146,14 @@ export default function App() {
             </span>
           </div>
           <div>
-            <Check />
+            <Layers />
             <span>
               <strong>Made for your workflow</strong>
               <small>One image or a whole batch.</small>
             </span>
           </div>
           <div>
-            <ShieldCheck />
+            <UsersRound />
             <span>
               <strong>Simple. Free. Yours.</strong>
               <small>No sign-up, tracking or hidden fees.</small>
@@ -116,7 +174,10 @@ export default function App() {
       </main>
       <footer>
         <span>
-          Image Toolkit <small>Thoughtful tools for everyday images.</small>
+          <b>
+            Image <em>Toolkit</em>
+          </b>
+          <small>Thoughtful tools for everyday images.</small>
         </span>
         <a
           href="https://github.com/noorisysba/image-toolkit"

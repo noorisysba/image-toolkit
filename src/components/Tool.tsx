@@ -312,10 +312,13 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
           <div className="section-title">
             <span className="step">1</span>
             <h2>Upload your images</h2>
-            <span className="count">{items.length}</span>
+            {items.length > 0 && <span className="count">{items.length}</span>}
           </div>
           <span className="local-label">
-            <ShieldCheck size={14} /> Local only
+            <span className="local-dot" /> Local only
+            <span title="Your images stay on your device. Nothing is uploaded.">
+              <Info size={14} aria-label="Your images stay on your device" />
+            </span>
           </span>
         </div>
         <div className="files-body">
@@ -374,8 +377,12 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
             )}
           </button>
           <div className="limits">
-            <span>Up to 50 images · 40 MB per file</span>
-            <span>32 megapixels per image · 256 MB per batch</span>
+            <span>
+              <FileImage size={14} /> Up to 50 images · 40 MB per file
+            </span>
+            <span>
+              <FileImage size={14} /> 32 megapixels per image · 256 MB per batch
+            </span>
           </div>
           {errors.length > 0 && (
             <div role="alert" className="error-box">
@@ -492,20 +499,28 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
                 ))}
               </ul>
             </>
-          ) : (
-            <div className="empty-hint">
-              <FileImage size={16} />
-              <span>Your images will appear here. Ready when you are.</span>
-            </div>
-          )}
+          ) : null}
         </div>
       </section>
       <aside>
-        <section className="card settings-card">
+        <section
+          className={`card settings-card ${metadata ? "cleaning-settings" : "conversion-settings"}`}
+        >
           <div className="card-heading">
             <div className="section-title">
               <span className="step">2</span>
               <h2>{metadata ? "Cleaning options" : "Conversion settings"}</h2>
+              {!metadata && (
+                <span
+                  className="conversion-info"
+                  title="Conversion re-encodes your image and may change or discard metadata. For verified metadata removal, use the dedicated Metadata Remover."
+                >
+                  <Info
+                    size={15}
+                    aria-label="Conversion may change or discard metadata"
+                  />
+                </span>
+              )}
             </div>
           </div>
           <div className="settings-body">
@@ -547,48 +562,57 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
                 <label className="field-label" id={`${mode}-format`}>
                   Convert to
                 </label>
-                <div
-                  className="format-options"
-                  role="group"
-                  aria-labelledby={`${mode}-format`}
-                >
-                  {(["png", "jpg", "webp"] as Format[]).map((value) => (
-                    <button
-                      key={value}
-                      aria-pressed={format === value}
-                      disabled={locked}
-                      className={format === value ? "selected" : ""}
-                      onClick={() => setFormat(value)}
-                    >
-                      {value.toUpperCase()}
-                    </button>
-                  ))}
+                <div className="format-group">
+                  <div
+                    className="format-options"
+                    role="group"
+                    aria-labelledby={`${mode}-format`}
+                  >
+                    {(["png", "jpg", "webp"] as Format[]).map((value) => (
+                      <button
+                        key={value}
+                        aria-pressed={format === value}
+                        disabled={locked}
+                        className={format === value ? "selected" : ""}
+                        onClick={() => setFormat(value)}
+                      >
+                        {format === value && (
+                          <CheckCircle2 size={18} aria-hidden="true" />
+                        )}
+                        {value.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="format-help">
+                    {format === "webp"
+                      ? "Smaller files, with transparency support."
+                      : format === "png"
+                        ? "Lossless encoding, with transparency support."
+                        : "Widely compatible, with a solid background."}
+                  </p>
                 </div>
-                <p className="format-help">
-                  {format === "webp"
-                    ? "Smaller files, with transparency support."
-                    : format === "png"
-                      ? "Lossless encoding, with transparency support."
-                      : "Widely compatible, with a solid background."}
-                </p>
                 <div className="quality-label">
                   <label htmlFor="quality">Image quality</label>
-                  <strong>
-                    {format === "png" ? "Lossless" : `${quality}%`}
-                  </strong>
                 </div>
-                <input
-                  id="quality"
-                  type="range"
-                  min="1"
-                  max="100"
-                  value={quality}
-                  disabled={locked || format === "png"}
-                  onChange={(e) => setQuality(Number(e.target.value))}
-                />
-                <div className="range-labels">
-                  <span>Smaller file</span>
-                  <span>Higher quality</span>
+                <div className="quality-group">
+                  <div className="quality-control">
+                    <input
+                      id="quality"
+                      type="range"
+                      min="1"
+                      max="100"
+                      value={quality}
+                      disabled={locked || format === "png"}
+                      onChange={(e) => setQuality(Number(e.target.value))}
+                    />
+                    <strong>
+                      {format === "png" ? "Lossless" : `${quality}%`}
+                    </strong>
+                  </div>
+                  <div className="range-labels">
+                    <span>Smaller file</span>
+                    <span>Higher quality</span>
+                  </div>
                 </div>
                 {format === "jpg" && (
                   <div className="background-setting">
@@ -658,25 +682,27 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
                 : "Add images to get started"}
             </p>
           </div>
+          {metadata && (
+            <div className="tip">
+              <Info size={17} />
+              <p>
+                Cleaning is verified for recognised metadata. Essential
+                rendering information is retained. Visible details in image
+                pixels and copies stored elsewhere are unaffected.
+              </p>
+            </div>
+          )}
+          {metadata && (
+            <div className="tip">
+              <Info size={17} />
+              <p>
+                Files with non-standard orientation are rejected if cleaning
+                could change their appearance. Animation is preserved. Unknown
+                structures are retained and flagged as partially processed.
+              </p>
+            </div>
+          )}
         </section>
-        <div className="tip">
-          <Info size={17} />
-          <p>
-            {metadata
-              ? "Cleaning is verified for recognised metadata. Essential rendering information is retained. Visible details in image pixels and copies stored elsewhere are unaffected."
-              : "Conversion re-encodes your image and may change or discard metadata. For verified metadata removal, use the dedicated Metadata Remover."}
-          </p>
-        </div>
-        {metadata && (
-          <div className="tip">
-            <Info size={17} />
-            <p>
-              Files with non-standard orientation are rejected if cleaning could
-              change their appearance. Animation is preserved. Unknown
-              structures are retained and flagged as partially processed.
-            </p>
-          </div>
-        )}
       </aside>
       <section
         className="card results-card"
@@ -793,11 +819,19 @@ export function Tool({ mode }: { mode: "converter" | "metadata" }) {
               ))}
             </ul>
           ) : (
-            <p className="results-empty">
-              {busy
-                ? "Your downloads will appear as each image finishes."
-                : "Upload images in step 1, then process them in step 2. Your downloads will appear here."}
-            </p>
+            <div className="results-empty">
+              <Download size={21} />
+              <p>
+                {busy
+                  ? "Your downloads will appear as each image finishes."
+                  : `Your ${metadata ? "cleaned" : "converted"} images will appear here`}
+              </p>
+              {!busy && (
+                <small>
+                  Upload images in step 1, then process them in step 2.
+                </small>
+              )}
+            </div>
           )}
         </div>
       </section>

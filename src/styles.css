@@ -1,8 +1,8 @@
 @import "tailwindcss";
 :root {
-  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  font-family: Arial, "Segoe UI", sans-serif;
   color: #0f172a;
-  background: #f8fafc;
+  background: #fff;
   font-synthesis: none;
   font-size: 17px;
 }
@@ -948,6 +948,558 @@ summary {
 [hidden] {
   display: none !important;
 }
+/* Reference design: airy blue hero and a clear, numbered vertical workflow. */
+body {
+  background:
+    radial-gradient(ellipse at 80% 10%, #e4f0ff9c, transparent 33%),
+    linear-gradient(#f5faff 0, #fff 600px, #f8fbff 100%);
+}
+header {
+  position: relative;
+  z-index: 1;
+  border-color: #edf3fc;
+}
+.header-inner {
+  max-width: 924px;
+  min-height: 64px;
+  padding: 0 12px;
+  gap: 24px;
+}
+.brand {
+  width: 222px;
+  height: 58px;
+}
+.brand-logo {
+  width: 300px;
+  height: 100px;
+}
+nav a {
+  font-size: 14px;
+  padding: 13px 15px;
+}
+.header-privacy {
+  font-size: 12px;
+}
+main {
+  max-width: 1080px;
+  padding: 0 32px;
+  position: relative;
+}
+.intro {
+  position: relative;
+  max-width: 860px;
+  margin: auto;
+  padding: 34px 0 28px;
+}
+.intro::before,
+.intro::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  border: 65px solid #d9eaff66;
+  border-radius: 50%;
+}
+.intro::before {
+  width: 640px;
+  height: 310px;
+  left: -600px;
+  top: 70px;
+  transform: rotate(30deg);
+}
+.intro::after {
+  width: 630px;
+  height: 340px;
+  right: -480px;
+  top: -220px;
+  transform: rotate(-35deg);
+}
+/* Clip the decorative waves without adding horizontal page scrolling. */
+#root {
+  overflow: hidden;
+}
+.intro > :not(.hero-art) {
+  position: relative;
+  z-index: 1;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 1.65px;
+  color: #5c7198;
+}
+h1 {
+  font-size: clamp(28px, 3.3vw, 39px);
+  letter-spacing: -1.5px;
+  font-weight: 800;
+  margin: 16px 0 9px;
+  line-height: 1.15;
+}
+h1 span {
+  color: #1766ff;
+}
+.intro > p {
+  color: #647ba3;
+  font-size: 18px;
+  line-height: 1.5;
+}
+.hero-features {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+}
+.hero-features > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffffab;
+  border: 1px solid #edf3fc;
+  padding: 9px 15px 9px 10px;
+  border-radius: 11px;
+}
+.hero-features svg,
+.benefits svg {
+  color: #1766ff;
+  background: #eaf3ff;
+  border-radius: 50%;
+  padding: 10px;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+}
+.hero-features strong {
+  display: block;
+  font-size: 13px;
+}
+.hero-features small {
+  display: block;
+  color: #6a80a8;
+  font-size: 12px;
+  margin-top: 3px;
+}
+.hero-art {
+  position: absolute;
+  width: 260px;
+  height: 210px;
+  right: -35px;
+  top: 25px;
+  pointer-events: none;
+}
+.art-tile {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border: 2px solid #ffffffd9;
+  border-radius: 20px;
+  box-shadow: 0 18px 40px #3582f323;
+  background: linear-gradient(145deg, #fff, #e6f1ff);
+}
+.art-tile svg {
+  width: 75%;
+  height: 75%;
+  stroke-width: 1;
+  color: #89b6ff;
+  fill: #bed8ff77;
+}
+.art-back {
+  width: 130px;
+  height: 130px;
+  right: 0;
+  top: 8px;
+  transform: rotate(13deg);
+  background: linear-gradient(140deg, #e1eeff, #bcd8ff);
+  opacity: 0.8;
+}
+.art-front {
+  width: 137px;
+  height: 144px;
+  left: 45px;
+  top: 65px;
+  transform: rotate(14deg);
+}
+.art-small {
+  width: 53px;
+  height: 65px;
+  left: -10px;
+  top: 100px;
+  transform: rotate(14deg);
+  opacity: 0.7;
+}
+.art-badge {
+  position: absolute;
+  right: 5px;
+  bottom: -11px;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  border: 2px solid white;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c3e0ff, #3985ff);
+  color: white;
+  box-shadow: 0 10px 25px #438eff33;
+}
+.art-badge svg {
+  width: 32px;
+  height: 32px;
+}
+.workspace {
+  max-width: 860px;
+  position: relative;
+}
+.tool-grid {
+  gap: 18px;
+}
+.card {
+  border-color: #dceaff;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px #3179df09;
+  background: #ffffffeb;
+}
+.card-heading {
+  min-height: 60px;
+  padding: 11px 20px;
+  border-color: #e9f0fa;
+}
+.section-title {
+  gap: 19px;
+}
+h2 {
+  font-size: 17px;
+  font-weight: 750;
+  letter-spacing: -0.4px;
+}
+.step {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0870ff, #1b5fff);
+  color: white;
+  font-size: 17px;
+  font-weight: 600;
+  box-shadow:
+    0 2px 7px #1766ff40,
+    inset 0 0 0 3px #ffffff18;
+}
+.local-label {
+  gap: 8px;
+  color: #6b80a7;
+}
+.local-label svg {
+  color: #6b80a7;
+}
+.local-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #20bf55;
+}
+.files-body {
+  padding: 12px 21px 18px;
+}
+.dropzone {
+  min-height: 200px;
+  padding: 16px;
+  gap: 7px;
+  border-width: 1.5px;
+  border-color: #4480ff;
+  background-image: linear-gradient(120deg, #ffffff33, #e4f0ff22);
+}
+.upload-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  margin: 0 0 5px;
+  background: #e9f3ff;
+}
+.dropzone strong {
+  color: #111c38;
+  font-size: 16px;
+}
+.browse-label {
+  margin-top: 5px;
+  padding: 9px 18px;
+  background: linear-gradient(120deg, #1372ff, #1762ff);
+  box-shadow: 0 4px 12px #1766ff20;
+}
+.limits {
+  font-size: 12px;
+  color: #6a80a8;
+}
+.limits span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings-card .settings-body {
+  max-width: none;
+  padding: 22px 45px 18px;
+}
+.conversion-settings .settings-body {
+  display: grid;
+  grid-template-columns: 145px minmax(0, 1fr);
+  column-gap: 16px;
+  align-items: start;
+}
+.conversion-info {
+  color: #7990b3;
+  display: inline-flex;
+}
+.conversion-settings .settings-body > .field-label,
+.quality-label {
+  padding-top: 9px;
+  color: #111c38;
+  font-size: 14px;
+}
+.format-options {
+  margin: 0;
+  padding: 0;
+  gap: 14px;
+  background: transparent;
+  border: 0;
+}
+.format-options button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid #dfe7f2;
+  background: #f5f7fb;
+  padding: 11px 0;
+  border-radius: 8px;
+}
+.format-options button.selected {
+  border-color: #5489ff;
+  color: #1766ff;
+  background: #eff6ff;
+  box-shadow:
+    0 0 0 3px #e3edff,
+    inset 0 0 0 2px #fff;
+}
+.format-options button.selected svg {
+  fill: #1766ff;
+  color: white;
+}
+.format-help {
+  margin: 10px 0 18px;
+  font-size: 13px;
+  color: #7185aa;
+}
+.quality-control {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 36px;
+}
+.quality-control strong {
+  color: #1766ff;
+  background: #eff6ff;
+  border: 1px solid #e8f0ff;
+  border-radius: 7px;
+  padding: 6px 9px;
+  font-size: 14px;
+}
+.quality-control input {
+  margin: 0;
+  min-width: 0;
+  flex: 1;
+  height: 6px;
+  accent-color: #1766ff;
+}
+.range-labels {
+  font-size: 12px;
+  margin-top: 4px;
+  color: #7185aa;
+}
+.conversion-settings .setting-note,
+.conversion-settings .primary-button,
+.conversion-settings .settings-caption,
+.background-setting {
+  grid-column: 2;
+}
+.setting-note {
+  padding: 20px 0 17px;
+  color: #637ba5;
+  font-size: 14px;
+  align-items: center;
+}
+.setting-note svg {
+  color: white;
+  fill: #1bb34c;
+  border-radius: 50%;
+  width: 17px;
+  height: 17px;
+}
+.primary-button {
+  position: relative;
+  background: linear-gradient(115deg, #2778ff, #1767ff);
+  box-shadow: 0 7px 16px #1766ff16;
+  padding: 13px 32px;
+}
+.primary-button > svg:last-child {
+  position: absolute;
+  right: 16px;
+  margin: 0;
+}
+.primary-button:disabled {
+  background: linear-gradient(115deg, #4587f5, #3478ed);
+  color: #fff;
+  box-shadow: none;
+}
+.settings-caption {
+  color: #7185aa;
+  font-size: 13px;
+}
+.cleaning-settings .settings-body {
+  padding-left: 170px;
+  padding-right: 65px;
+}
+.clean-default {
+  position: relative;
+}
+.clean-default > svg {
+  position: absolute;
+  left: -90px;
+  top: 5px;
+  width: 35px;
+  height: 35px;
+}
+.clean-default p {
+  color: #637ba5;
+  font-size: 14px;
+  line-height: 1.65;
+}
+details {
+  padding: 14px 0 18px;
+  border-color: #e9f0fa;
+}
+.tip {
+  padding: 0 30px 18px;
+  gap: 11px;
+  color: #6b80a7;
+}
+.tip p {
+  font-size: 13px;
+  line-height: 1.65;
+}
+.conversion-settings > .tip {
+  padding-top: 0;
+  font-size: 12px;
+}
+.results-empty {
+  min-height: 101px;
+  border: 1px dashed #c7dfff;
+  border-radius: 10px;
+  background: linear-gradient(120deg, #f7fbff, #f1f7ff88);
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  padding: 14px;
+  text-align: center;
+  color: #647da8;
+}
+.results-empty p {
+  margin: 7px 0 0;
+  font-size: 14px;
+}
+.results-empty small {
+  color: #8a9fc2;
+  font-size: 13px;
+}
+.benefits {
+  gap: 13px;
+  margin: 22px 0 16px;
+}
+.benefits > div {
+  background: #ffffffa8;
+  border: 1px solid #e2ecf9;
+  border-radius: 12px;
+  padding: 14px 16px;
+  align-items: center;
+  gap: 14px;
+}
+.benefits svg {
+  width: 48px;
+  height: 48px;
+  padding: 12px;
+  margin: 0;
+}
+.benefits strong {
+  font-size: 14px;
+  font-weight: 700;
+}
+.benefits small {
+  font-size: 13px;
+  color: #6b80a7;
+  margin-top: 5px;
+  line-height: 1.5;
+}
+.privacy-note {
+  padding: 15px 21px;
+  background: #edf5ff;
+  border-color: #d9e9ff;
+  gap: 17px;
+}
+.privacy-note strong {
+  font-size: 14px;
+}
+.privacy-note p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #7b94ba;
+  margin-top: 3px;
+}
+footer {
+  max-width: 1016px;
+  border: 0;
+  margin: 0 auto;
+  padding: 18px 0 24px;
+  font-size: 13px;
+}
+footer b {
+  color: #111c38;
+}
+footer em {
+  font-style: normal;
+  color: #1766ff;
+}
+footer small {
+  padding-left: 14px;
+  border-left: 1px solid #b8c8e0;
+  font-size: 12px;
+}
+@media (max-width: 1150px) {
+  .hero-art {
+    opacity: 0.65;
+    right: -10px;
+    transform: scale(0.85);
+    transform-origin: right top;
+  }
+  .intro > h1,
+  .intro > p {
+    max-width: 740px;
+  }
+}
+@media (max-width: 900px) {
+  .hero-art {
+    display: none;
+  }
+  .header-inner {
+    gap: 10px;
+  }
+  .header-privacy {
+    display: none;
+  }
+  .benefits > div {
+    padding: 12px;
+    gap: 9px;
+  }
+  .benefits svg {
+    width: 38px;
+    height: 38px;
+    padding: 8px;
+  }
+}
 @media (min-width: 1500px) {
   main {
     padding-top: 16px;
@@ -1081,5 +1633,152 @@ summary {
   }
   .result-thumbnail {
     display: none;
+  }
+}
+@media (max-width: 720px) {
+  .header-inner {
+    gap: 8px;
+    align-items: center;
+    padding: 7px 16px 12px;
+  }
+  .brand {
+    width: 222px;
+    height: 54px;
+  }
+  .brand-logo {
+    width: 300px;
+    height: 100px;
+  }
+  nav a {
+    font-size: 13px;
+  }
+  .intro {
+    padding: 30px 0 24px;
+  }
+  h1 {
+    max-width: none;
+    font-size: 31px;
+    letter-spacing: -1px;
+  }
+  .intro > p {
+    max-width: none;
+    font-size: 16px;
+  }
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 1.4px;
+  }
+  .hero-features {
+    gap: 7px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+  .hero-features > div {
+    padding: 9px;
+    flex: 1 1 130px;
+    gap: 8px;
+  }
+  .hero-features svg {
+    width: 34px;
+    height: 34px;
+    padding: 8px;
+  }
+  .hero-features strong {
+    font-size: 12px;
+  }
+  .hero-features small {
+    font-size: 11px;
+  }
+  .intro::before,
+  .intro::after {
+    display: none;
+  }
+  .card-heading {
+    padding: 11px 14px;
+    gap: 8px;
+  }
+  .section-title {
+    gap: 11px;
+  }
+  .step {
+    width: 33px;
+    height: 33px;
+    flex-shrink: 0;
+    font-size: 15px;
+  }
+  h2 {
+    font-size: 15px;
+  }
+  .local-label {
+    font-size: 11px;
+    gap: 4px;
+  }
+  .local-label > span:last-child {
+    display: none;
+  }
+  .files-body,
+  .settings-card .settings-body {
+    padding: 15px;
+  }
+  .dropzone {
+    min-height: 205px;
+    padding: 18px 12px;
+  }
+  .dropzone strong {
+    font-size: 15px;
+  }
+  .limits {
+    font-size: 11px;
+    gap: 7px;
+  }
+  .conversion-settings .settings-body {
+    display: block;
+  }
+  .format-options {
+    margin-top: 11px;
+    gap: 8px;
+  }
+  .quality-label {
+    padding-top: 0;
+    margin-bottom: 5px;
+  }
+  .cleaning-settings .settings-body {
+    padding-left: 58px;
+  }
+  .clean-default > svg {
+    left: -42px;
+    width: 28px;
+    height: 28px;
+  }
+  .tip {
+    padding: 0 15px 16px;
+  }
+  .tip p {
+    font-size: 12px;
+  }
+  .benefits {
+    gap: 10px;
+    margin: 19px 0 14px;
+  }
+  .benefits > div {
+    padding: 14px;
+  }
+  .benefits svg {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+  }
+  .privacy-note {
+    padding: 15px;
+  }
+  footer {
+    margin: 0 18px;
+    padding-top: 18px;
+    gap: 10px;
+  }
+  footer small {
+    padding: 0;
+    border: 0;
+    max-width: 170px;
   }
 }
