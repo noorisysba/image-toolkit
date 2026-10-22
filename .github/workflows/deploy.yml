@@ -23,7 +23,9 @@ jobs:
           version: 11.25.0
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
-      - run: pnpm exec playwright install --with-deps chromium
+      # GitHub's Ubuntu image includes Chromium's system libraries.
+      # Avoid unnecessary apt upgrades and optional font downloads from mirrors.
+      - run: pnpm exec playwright install chromium
       - run: pnpm test:e2e
       - run: pnpm build
       - uses: actions/configure-pages@v5
